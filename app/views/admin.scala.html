@@ -1,0 +1,23 @@
+@(adminForm: Form[AdminData])(implicit messages: Messages)
+
+@import helper._
+
+@main {
+
+<div class="row top-buffer">
+  <div class="col-md-8 col-md-offset-2 well">
+    @form(action = routes.Application.adminPost()) {
+      <div class="form-group">
+        @textarea(adminForm("teams"), '_showConstraints -> false, '_label -> "Team ID's", 'class -> "form-control", 'rows -> 2, 'placeholder -> "e.g. 12345,67890,11111", '_help -> "Enter the team ID's you wish to track as a comma-separated list")
+      </div>
+      <div class="form-group">
+        @input(adminForm("advancers"), '_showConstraints -> false, '_label -> "Number of Advancing Teams") { (id, name, value, args) =>
+          <input class="form-control" min="0" max="100" type="number" name="@name" id="@id" @toHtmlArgs(args)>
+        }
+      </div>
+      <button type="submit" class="btn btn-success">Update</button>
+    }
+  </div>
+</div>  
+
+}
