@@ -10,7 +10,8 @@ libraryDependencies ++= Seq(
   jdbc,
   cache,
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
-  ws
+  ws,
+  "net.debasishg" %% "redisclient" % "3.0"
 )
 
 libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-compiler" % _ )
