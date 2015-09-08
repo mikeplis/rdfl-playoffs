@@ -29,6 +29,10 @@ class Application extends Controller {
     )
   }
 
+  def test = Action {
+    Ok(views.html.index())
+  }
+
   val adminForm = Form(
     mapping(
       "teams" -> nonEmptyText,
