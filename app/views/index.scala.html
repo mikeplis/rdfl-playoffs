@@ -20,7 +20,7 @@
       <tr class="danger">
     }
       <td>@liveScore.name</td>
-      <td>@liveScore.score</td>
+      <td>@("%.2f".format(liveScore.score))</td>
       <td>@liveScore.gameSecondsRemaining</td>
       <td>@liveScore.playersYetToPlay</td>
       <td>@liveScore.playersCurrentlyPlaying</td>

@@ -46,7 +46,12 @@ object Application extends Controller {
 
   def admin = Action {
     getFranchiseListFromMFL.fold(InternalServerError("error getting list of franchises")) { franchises =>
-      Ok(views.html.admin(adminForm, franchises))
+      val filledForm = adminForm.fill(
+        AdminData(
+          advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0),
+          teamIds = redis.lrange(TeamIds, 0, -1).fold(List.empty[String])(_.flatten)
+      ))
+      Ok(views.html.admin(filledForm, franchises))
     }
   }
 
