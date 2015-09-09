@@ -1,9 +1,32 @@
-@(text: String = "default")
+@(liveScores: Seq[LiveScoreForDisplay], advancerCount: Int)
 
 @main {
 
-<h1>Index</h1>
-
-<h2>@text</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Team Name</th>
+      <th>Score</th>
+      <th>Game Seconds Remaining</th>
+      <th>Players Yet To Play</th>
+      <th>Players Currently Playing</th>
+    </tr>
+  </thead>
+  <tbody>  
+  @for((liveScore, idx) <- liveScores.sortBy(- _.score).zipWithIndex) {
+    @if(idx < advancerCount) {
+      <tr class="success">
+    } else {
+      <tr class="danger">
+    }
+      <td>@liveScore.name</td>
+      <td>@liveScore.score</td>
+      <td>@liveScore.gameSecondsRemaining</td>
+      <td>@liveScore.playersYetToPlay</td>
+      <td>@liveScore.playersCurrentlyPlaying</td>
+    </tr>
+  }
+  </tbody>
+</table>
 
 }
