@@ -15,12 +15,22 @@ import com.redis._
 
 import scala.util.Random
 
+import java.net.URI
+
 // TODO: unify "team" vs "franchise"
 // TODO: use Reads to turn json into Scala objects
+// TODO: add wrapper around redis client
+// TODO: write tests
+// TODO: move MFL data retrieval into object
+// TODO: figure out if conf file should be used instead of environment variables
 
 object Application extends Controller {
 
-  lazy val redis = new RedisClient("localhost", 6379)
+  lazy val redis = {
+    val uri = new URI(sys.env("REDIS_URL"))
+    val secret = uri.getUserInfo().split(":",2).lastOption
+    new RedisClient(uri.getHost, uri.getPort, secret = secret)
+  }
 
   lazy val adminForm = Form(
     mapping(
