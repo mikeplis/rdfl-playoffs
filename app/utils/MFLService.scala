@@ -5,7 +5,6 @@ import play.api.libs.json.{JsValue, JsObject, Json}
 import scala.io.Source
 import scala.util.Random
 
-
 trait MFLService {
 
   def franchises: Option[List[Franchise]] = {
