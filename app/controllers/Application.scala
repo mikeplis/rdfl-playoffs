@@ -8,14 +8,12 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages.Implicits._
 
-import play.api.libs.json._
-import scala.io.Source
-
 import com.redis._
 
-import scala.util.Random
 
 import java.net.URI
+
+import utils._
 
 // TODO: unify "team" vs "franchise"
 // TODO: use Reads to turn json into Scala objects
@@ -29,7 +27,7 @@ object Application extends Controller {
 
   lazy val redis = {
     val uri = new URI(sys.env("REDIS_URL"))
-    val secret = uri.getUserInfo().split(":",2).lastOption
+    val secret = uri.getUserInfo.split(":",2).lastOption
     new RedisClient(uri.getHost, uri.getPort, secret = secret)
   }
 
@@ -44,19 +42,19 @@ object Application extends Controller {
   val AdvancerCount = "advancerCount"
 
   def index = Action {
-    val liveScores = getLiveScoresForDisplay()
+    val liveScores = formatLiveScoresForDisplay(MFLClient.liveScores)
     val advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0)
     Ok(views.html.index(liveScores, advancerCount))
   }
 
   def test = Action {
-    val liveScores = getLiveScoresForDisplay(debug = true)
+    val liveScores = formatLiveScoresForDisplay(MockMFLClient.liveScores)
     val advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0)
     Ok(views.html.index(liveScores, advancerCount))
   }
 
   def admin = Action {
-    getFranchiseListFromMFL.fold(InternalServerError("error getting list of franchises")) { franchises =>
+    MFLClient.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
       val filledForm = adminForm.fill(
         AdminData(
           advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0),
@@ -69,7 +67,7 @@ object Application extends Controller {
   def adminPost = Action { implicit request =>
     adminForm.bindFromRequest.fold(
       formWithErrors => {
-        val franchiseList = getFranchiseListFromMFL.getOrElse(List())
+        val franchiseList = MFLClient.franchises.getOrElse(List())
         BadRequest(views.html.admin(formWithErrors, franchiseList))
       },
       adminData => {
@@ -85,15 +83,11 @@ object Application extends Controller {
     )
   }
 
-  // get live scores for franchises stored in redis
-  def getLiveScoresForDisplay(debug: Boolean = false): Seq[LiveScoreForDisplay] = {
+  def formatLiveScoresForDisplay(liveScores: Seq[LiveScore]): Seq[LiveScoreForDisplay] = {
     // get tracked team ids from redis
     val teamIds: List[String] = redis.lrange(TeamIds, 0, -1).fold(List.empty[String])(_.flatten)
-    // get live scores from MFL
-    val liveScores = getLiveScores(debug)
 
-    val idToName = getFranchiseListFromMFL.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
-
+    val idToName = MFLClient.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
     liveScores.filter(liveScore => teamIds.contains(liveScore.id)).map { liveScore => 
       LiveScoreForDisplay(
@@ -104,44 +98,7 @@ object Application extends Controller {
         playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
     }
   }
-
-  def getLiveScores(debug: Boolean = false) = {
-    val liveScoringUrl = "http://football26.myfantasyleague.com/2015/export?TYPE=liveScoring&L=34348&JSON=1"
-    val json = Json.parse(Source.fromURL(liveScoringUrl).mkString)
-    val matchups = json \\ "franchise"
-    val liveScores = matchups.map(_.as[List[JsValue]]).flatten
-    liveScores.map { liveScore =>
-      val id = (liveScore \ "id").as[String]
-      val score = if (debug) {
-        Random.nextDouble * 200
-      }
-      else {
-        (liveScore \ "score").as[String].toDouble
-      }
-      val gameSecondsRemaining = (liveScore \ "gameSecondsRemaining").as[String].toInt
-      val playersYetToPlay = (liveScore \ "playersYetToPlay").as[String].toInt
-      val playersCurrentlyPlaying = (liveScore \ "playersCurrentlyPlaying").as[String].toInt
-      LiveScore(id, score, gameSecondsRemaining, playersYetToPlay, playersCurrentlyPlaying)
-    }
-  }
-
-  def getFranchiseListFromMFL: Option[List[Franchise]] = {
-    val league = {
-      // TODO: read this from config file
-      val url = "http://football26.myfantasyleague.com/2015/export?TYPE=league&L=34348&W=&JSON=1"
-      val source = Source.fromURL(url).mkString
-      Json.parse(source)
-    }
-    val maybeFranchises = (league \\ "franchise").headOption.map(_.as[List[JsObject]])
-    maybeFranchises.map(_.map { franchiseJson =>
-      val name = (franchiseJson \ "name").as[String]
-      val id = (franchiseJson \ "id").as[String]
-      Franchise(name, id)
-    })
-  }
 }
 
 case class AdminData(advancerCount: Int, teamIds: List[String])
-case class Franchise(name: String, id: String)
-case class LiveScore(id: String, score: Double, gameSecondsRemaining: Int, playersYetToPlay: Int, playersCurrentlyPlaying: Int)
 case class LiveScoreForDisplay(name: String, score: Double, gameSecondsRemaining: Int, playersYetToPlay: Int, playersCurrentlyPlaying: Int)
