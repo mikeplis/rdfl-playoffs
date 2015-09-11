@@ -6,7 +6,7 @@ import scala.io.Source
 import scala.util.Random
 
 
-trait MFLClientT {
+trait MFLService {
 
   def franchises: Option[List[Franchise]] = {
     val league = {
@@ -26,7 +26,7 @@ trait MFLClientT {
   def liveScores: Seq[LiveScore]
 }
 
-object MFLClient extends MFLClientT {
+object LiveMFLService extends MFLService {
   def liveScores = {
     val liveScoringUrl = "http://football26.myfantasyleague.com/2015/export?TYPE=liveScoring&L=34348&JSON=1"
     val json = Json.parse(Source.fromURL(liveScoringUrl).mkString)
@@ -43,7 +43,7 @@ object MFLClient extends MFLClientT {
   }
 }
 
-object MockMFLClient extends MFLClientT {
+object MockMFLService extends MFLService {
   def liveScores: Seq[LiveScore] = {
     val startingLineupSize = 14
     franchises.fold(Seq.empty[LiveScore])(_.map { franchise =>

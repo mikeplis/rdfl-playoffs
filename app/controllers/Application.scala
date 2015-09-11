@@ -10,7 +10,6 @@ import play.api.i18n.Messages.Implicits._
 
 import com.redis._
 
-
 import java.net.URI
 
 import utils._
@@ -42,19 +41,19 @@ object Application extends Controller {
   val AdvancerCount = "advancerCount"
 
   def index = Action {
-    val liveScores = formatLiveScoresForDisplay(MFLClient.liveScores)
+    val liveScores = formatLiveScoresForDisplay(LiveMFLService.liveScores)
     val advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0)
     Ok(views.html.index(liveScores, advancerCount))
   }
 
   def test = Action {
-    val liveScores = formatLiveScoresForDisplay(MockMFLClient.liveScores)
+    val liveScores = formatLiveScoresForDisplay(MockMFLService.liveScores)
     val advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0)
     Ok(views.html.index(liveScores, advancerCount))
   }
 
   def admin = Action {
-    MFLClient.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
+    LiveMFLService.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
       val filledForm = adminForm.fill(
         AdminData(
           advancerCount = redis.get(AdvancerCount).map(_.toInt).getOrElse(0),
@@ -67,7 +66,7 @@ object Application extends Controller {
   def adminPost = Action { implicit request =>
     adminForm.bindFromRequest.fold(
       formWithErrors => {
-        val franchiseList = MFLClient.franchises.getOrElse(List())
+        val franchiseList = LiveMFLService.franchises.getOrElse(List())
         BadRequest(views.html.admin(formWithErrors, franchiseList))
       },
       adminData => {
@@ -87,7 +86,7 @@ object Application extends Controller {
     // get tracked team ids from redis
     val teamIds: List[String] = redis.lrange(TeamIds, 0, -1).fold(List.empty[String])(_.flatten)
 
-    val idToName = MFLClient.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
+    val idToName = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
     liveScores.filter(liveScore => teamIds.contains(liveScore.id)).map { liveScore => 
       LiveScoreForDisplay(
