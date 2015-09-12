@@ -37,27 +37,34 @@ object LiveMFLService extends MFLService {
 
 object MockMFLService extends MFLService {
   def liveScores = {
-    ???
-//    val startingLineupSize = 14
-//    franchises.fold(Seq.empty[LiveScore2])(_.map { franchise =>
-//      val id = franchise.id
-//      val playersCurrentlyPlaying = 0
-//      val playersYetToPlay = Random.nextInt(startingLineupSize + 1)
-//      val gameSecondsRemaining = 3600 * playersYetToPlay
-//      val score = {
-//        val playersPlayed = startingLineupSize - playersYetToPlay
-//        (1 to playersPlayed).map { _ =>
-//          // generate random double from 5 to 15 to simulate each player's score
-//          (Random.nextDouble * 10) + 5
-//        }.sum
-//      }
-//      LiveScore2(id, score, gameSecondsRemaining, playersYetToPlay, playersCurrentlyPlaying)
-//    })
+    val fs = {
+      val startingLineupSize = 14
+      franchises.fold(Seq.empty[LiveScoreFranchise])(_.map { franchise =>
+        val id = franchise.id
+        val playersCurrentlyPlaying = 0
+        val playersYetToPlay = Random.nextInt(startingLineupSize + 1)
+        val gameSecondsRemaining = 3600 * playersYetToPlay
+        val score = {
+          val playersPlayed = startingLineupSize - playersYetToPlay
+          (1 to playersPlayed).map { _ =>
+            // generate random double from 5 to 15 to simulate each player's score
+            (Random.nextDouble * 10) + 5
+          }.sum
+        }
+        LiveScoreFranchise(
+          id = id,
+          score = score,
+          gameSecondsRemaining = gameSecondsRemaining,
+          playersYetToPlay = playersYetToPlay,
+          playersCurrentlyPlaying = playersCurrentlyPlaying,
+          players = Seq.empty[LiveScorePlayer])
+      })
+    }
+    LiveScoring(Seq(LiveScoreMatchup(fs)))
   }
 }
 
 case class Franchise(name: String, id: String)
-case class LiveScore2(id: String, score: Double, gameSecondsRemaining: Int, playersYetToPlay: Int, playersCurrentlyPlaying: Int)
 
 case class LiveScorePlayer(playerId: String, score: Double, gameSecondsRemaining: Int, status: String)
 object LiveScorePlayer {
@@ -69,16 +76,7 @@ object LiveScorePlayer {
   )(LiveScorePlayer.apply _)
 }
 
-case class LiveScorePlayers(players: Seq[LiveScorePlayer])
-object LiveScorePlayers {
-  // below code was not working, see here: http://stackoverflow.com/questions/15042205/how-to-serialize-deserialize-case-classes-to-from-json-in-play-2-1
-//  implicit val reads: Reads[LiveScorePlayers] = (
-//    (__ \ "player").read[Seq[LiveScorePlayer]]
-//  )(LiveScorePlayers.apply _)
-  implicit val reads: Reads[LiveScorePlayers] = (__ \ "player").read[Seq[LiveScorePlayer]].map(LiveScorePlayers.apply)
-}
-
-case class LiveScoreFranchise(franchiseId: String,
+case class LiveScoreFranchise(id: String,
                               score: Double,
                               gameSecondsRemaining: Int,
                               playersYetToPlay: Int,
@@ -100,7 +98,9 @@ object LiveScoreMatchup {
   implicit val reads: Reads[LiveScoreMatchup] = (__ \ "franchise").read[Seq[LiveScoreFranchise]].map(LiveScoreMatchup.apply)
 }
 
-case class LiveScoring(matchups: Seq[LiveScoreMatchup])
+case class LiveScoring(matchups: Seq[LiveScoreMatchup]) {
+  def franchises = matchups.flatMap(_.franchises)
+}
 object LiveScoring {
   implicit val reads: Reads[LiveScoring] = (__ \ "liveScoring" \ "matchup").read[Seq[LiveScoreMatchup]].map(LiveScoring.apply)
 }

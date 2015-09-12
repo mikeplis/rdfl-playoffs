@@ -11,7 +11,6 @@ import play.api.i18n.Messages.Implicits._
 import utils._
 
 // TODO: unify "team" vs "franchise"
-// TODO: use Reads to turn json into Scala objects
 // TODO: write tests
 // TODO: figure out if conf file should be used instead of environment variables
 // TODO: fix all of the unsafe calls like toDouble and sys.env()
@@ -63,20 +62,17 @@ object Application extends Controller {
   }
 
   private def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
-//    val teamIds = RedisService.getTeamIds
-//    val idToNameMap = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
-//
-//    val x = liveScoring.matchups.flatMap(_.franchises)
-//
-//    liveScoring.filter(liveScore => teamIds.contains(liveScore.id)).map { liveScore =>
-//      LiveScoreForDisplay(
-//        name = idToNameMap.getOrElse(liveScore.id, ""),
-//        score = liveScore.score,
-//        gameSecondsRemaining = liveScore.gameSecondsRemaining,
-//        playersYetToPlay = liveScore.playersYetToPlay,
-//        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
-//    }
-    ???
+    val teamIds = RedisService.getTeamIds
+    val idToNameMap = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
+
+    liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id)).map { liveScore =>
+      LiveScoreForDisplay(
+        name = idToNameMap.getOrElse(liveScore.id, ""),
+        score = liveScore.score,
+        gameSecondsRemaining = liveScore.gameSecondsRemaining,
+        playersYetToPlay = liveScore.playersYetToPlay,
+        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
+    }
   }
 }
 
