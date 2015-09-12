@@ -62,18 +62,21 @@ object Application extends Controller {
     )
   }
 
-  private def formatLiveScoresForDisplay(liveScores: Seq[LiveScore]): Seq[LiveScoreForDisplay] = {
-    val teamIds = RedisService.getTeamIds
-    val idToName = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
-
-    liveScores.filter(liveScore => teamIds.contains(liveScore.id)).map { liveScore => 
-      LiveScoreForDisplay(
-        name = idToName.getOrElse(liveScore.id, ""),
-        score = liveScore.score,
-        gameSecondsRemaining = liveScore.gameSecondsRemaining,
-        playersYetToPlay = liveScore.playersYetToPlay,
-        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
-    }
+  private def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
+//    val teamIds = RedisService.getTeamIds
+//    val idToNameMap = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
+//
+//    val x = liveScoring.matchups.flatMap(_.franchises)
+//
+//    liveScoring.filter(liveScore => teamIds.contains(liveScore.id)).map { liveScore =>
+//      LiveScoreForDisplay(
+//        name = idToNameMap.getOrElse(liveScore.id, ""),
+//        score = liveScore.score,
+//        gameSecondsRemaining = liveScore.gameSecondsRemaining,
+//        playersYetToPlay = liveScore.playersYetToPlay,
+//        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
+//    }
+    ???
   }
 }
 
