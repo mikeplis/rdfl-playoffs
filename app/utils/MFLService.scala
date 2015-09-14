@@ -5,9 +5,8 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 import scala.io.Source
-import scala.util.Random
 
-trait MFLService {
+object MFLService {
 
   def franchises: Option[List[Franchise]] = {
     val league = {
@@ -24,43 +23,10 @@ trait MFLService {
     })
   }
 
-  def liveScores: LiveScoring
-}
-
-object LiveMFLService extends MFLService {
   def liveScores = {
     val liveScoringUrl = "http://football26.myfantasyleague.com/2015/export?TYPE=liveScoring&L=34348&DETAILS=1&JSON=1"
     val json = Json.parse(Source.fromURL(liveScoringUrl).mkString)
     json.as[LiveScoring]
-  }
-}
-
-object MockMFLService extends MFLService {
-  def liveScores = {
-    val fs = {
-      val startingLineupSize = 14
-      franchises.fold(Seq.empty[LiveScoreFranchise])(_.map { franchise =>
-        val id = franchise.id
-        val playersCurrentlyPlaying = 0
-        val playersYetToPlay = Random.nextInt(startingLineupSize + 1)
-        val gameSecondsRemaining = 3600 * playersYetToPlay
-        val score = {
-          val playersPlayed = startingLineupSize - playersYetToPlay
-          (1 to playersPlayed).map { _ =>
-            // generate random double from 5 to 15 to simulate each player's score
-            (Random.nextDouble * 10) + 5
-          }.sum
-        }
-        LiveScoreFranchise(
-          id = id,
-          score = score,
-          gameSecondsRemaining = gameSecondsRemaining,
-          playersYetToPlay = playersYetToPlay,
-          playersCurrentlyPlaying = playersCurrentlyPlaying,
-          players = Seq.empty[LiveScorePlayer])
-      })
-    }
-    LiveScoring(Seq(LiveScoreMatchup(fs)))
   }
 }
 
