@@ -63,10 +63,14 @@ object Application extends Controller {
 
     val activeFranchises = liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id))
 
-    val franchiseToProjectedScore = projectedToAdvance(activeFranchises)
-    val franchisesProjectedToAdvance = {
+    val franchiseToProjectedScore = liveProjections(activeFranchises)
+
+    val franchisesProjectedToAdvance: HashSet[String] = {
+      // sort franchises by their live projected scores
       val orderedByProjection = franchiseToProjectedScore.toSeq.sortBy(- _._2)
-      HashSet(orderedByProjection.take(RedisService.getAdvancerCount).map(_._1): _*)
+      // create a Set of the top N franchises by projected score, where N in the number of advancers set by the admin
+      val projectedToAdvance = orderedByProjection.take(RedisService.getAdvancerCount).map(_._1)
+      HashSet(projectedToAdvance: _*)
     }
 
     activeFranchises.map { liveScore =>
@@ -81,14 +85,27 @@ object Application extends Controller {
     }
   }
 
-  def projectedToAdvance(franchises: Seq[LiveScoreFranchise]) = {
+  /** Calculate the live projected score for each franchise
+   *
+   * @param franchises - list of franchises to calculate projections for
+   * @return - map of franchise ID to live projected score
+   */
+  def liveProjections(franchises: Seq[LiveScoreFranchise]): Map[String, Double] = {
+    // a football game is 60 minutes in length
     val totalSecondsInGame = 3600
-    val projectedScores = MFLService.projectedScores.scores.map(ps => ps.id -> ps.score).toMap
+    // retrieve pre-game projected scores for all players
+    val pregameProjections = MFLService.projectedScores.scores.map(ps => ps.id -> ps.score).toMap
     franchises.map { franchise =>
+      // sum up the live projected scores for each player
       val liveFranchiseProjection = franchise.starters.foldLeft(0d){ case (sum, player) =>
+        // calculate live projected score for each player
         val livePlayerProjection = {
-          val projectedScore = projectedScores.getOrElse(player.playerId, 0d)
-          player.score + (player.gameSecondsRemaining / totalSecondsInGame) * projectedScore
+          // retrieve pre-game projected score for player
+          val pregameProjection = pregameProjections.getOrElse(player.playerId, 0d)
+          // add player's current score to his pre-game projected score, with the pre-game projected score weighted by the
+          // number of seconds remaining in the game, i.e. as the game moves on, a player's live projected score will converge
+          // toward his current score
+          player.score + (player.gameSecondsRemaining / totalSecondsInGame) * pregameProjection
         }
         sum + livePlayerProjection
       }
