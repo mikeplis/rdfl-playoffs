@@ -25,19 +25,13 @@ object Application extends Controller {
   )
 
   def index = Action {
-    val liveScores = formatLiveScoresForDisplay(LiveMFLService.liveScores)
-    val advancerCount = RedisService.getAdvancerCount
-    Ok(views.html.index(liveScores, advancerCount))
-  }
-
-  def test = Action {
-    val liveScores = formatLiveScoresForDisplay(MockMFLService.liveScores)
+    val liveScores = formatLiveScoresForDisplay(MFLService.liveScores)
     val advancerCount = RedisService.getAdvancerCount
     Ok(views.html.index(liveScores, advancerCount))
   }
 
   def admin = Action {
-    LiveMFLService.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
+    MFLService.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
       val filledForm = adminForm.fill(
         AdminData(
           advancerCount = RedisService.getAdvancerCount,
@@ -50,7 +44,7 @@ object Application extends Controller {
   def adminPost = Action { implicit request =>
     adminForm.bindFromRequest.fold(
       formWithErrors => {
-        val franchiseList = LiveMFLService.franchises.getOrElse(List())
+        val franchiseList = MFLService.franchises.getOrElse(List())
         BadRequest(views.html.admin(formWithErrors, franchiseList))
       },
       adminData => {
@@ -63,7 +57,7 @@ object Application extends Controller {
 
   private def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
     val teamIds = RedisService.getTeamIds
-    val idToNameMap = LiveMFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
+    val idToNameMap = MFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
     liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id)).map { liveScore =>
       LiveScoreForDisplay(
