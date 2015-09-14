@@ -7,15 +7,22 @@
 
 <div class="row top-buffer">
   <div class="col-md-8 col-md-offset-2 well">
+    <div class="pull-right">
+        <a href="@routes.Application.index()">Go to main page</a>
+    </div>
     @form(action = routes.Application.adminPost()) {
-      <button type="submit" class="btn btn-success">Update</button>
+      <div class="form-group">
+        <button type="submit" class="btn btn-success">Update</button>
+      </div>
       <div class="form-group">
         @input(adminForm("advancers"), '_showConstraints -> false, '_label -> "Number of Advancing Teams") { (id, name, value, args) =>
           <input class="form-control" min="0" max="100" type="number" name="@name" value="@value" id="@id" @toHtmlArgs(args)>
         }
       </div>
 
-      @myInputCheckboxGroup(adminForm("teamId"), options = franchises.sortBy(_.name).map(f => f.id -> f.name), '_label -> "Teams")
+      <div class="form-group">
+        @myInputCheckboxGroup(adminForm("teamId"), options = franchises.sortBy(_.name).map(f => f.id -> f.name), '_label -> "Teams")
+      </div>
 
       <button type="submit" class="btn btn-success">Update</button>
     }
