@@ -27,9 +27,9 @@ object Application extends Controller {
   )
 
   def index = Action {
-    val liveScores = formatLiveScoresForDisplay(MFLService.liveScores)
+    val (liveResults, overviewStats) = getLiveResults(MFLService.liveScores)
     val advancerCount = RedisService.getAdvancerCount
-    Ok(views.html.index(liveScores, advancerCount))
+    Ok(views.html.index(liveResults, overviewStats, advancerCount))
   }
 
   def admin = Action {
@@ -57,7 +57,7 @@ object Application extends Controller {
     )
   }
 
-  def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
+  def getLiveResults(liveScoring: LiveScoring) = {
     val teamIds = RedisService.getTeamIds
     val idToNameMap = MFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
@@ -73,8 +73,20 @@ object Application extends Controller {
       HashSet(projectedToAdvance: _*)
     }
 
-    activeFranchises.map { liveScore =>
-      LiveScoreForDisplay(
+    val overviewStats = {
+      val sizeOfLastInFirstOut = 4
+      val (in, out) = franchiseToProjectedScore.toSeq.sortBy(- _._2).splitAt(RedisService.getAdvancerCount)
+      val projectedCut = in.lastOption.fold(0d)(_._2)
+      val lastIn = in.takeRight(sizeOfLastInFirstOut)
+      val firstOut = out.take(sizeOfLastInFirstOut)
+      OverviewStats(
+        projectedCut = in.lastOption.fold(0d)(_._2),
+        lastIn = in.takeRight(sizeOfLastInFirstOut).map(x => idToNameMap.getOrElse(x._1, "")),
+        firstOut = out.take(sizeOfLastInFirstOut).map(x => idToNameMap.getOrElse(x._1, "")))
+    }
+
+    val liveResults = activeFranchises.map { liveScore =>
+      LiveResultRow(
         name = idToNameMap.getOrElse(liveScore.id, ""),
         score = liveScore.score,
         gameSecondsRemaining = liveScore.gameSecondsRemaining,
@@ -83,6 +95,7 @@ object Application extends Controller {
         projectedScore = franchiseToProjectedScore(liveScore.id),
         projectedToAdvance = franchisesProjectedToAdvance.contains(liveScore.id))
     }
+    (liveResults, overviewStats)
   }
 
   /** Calculate the live projected score for each franchise
@@ -115,10 +128,15 @@ object Application extends Controller {
 }
 
 case class AdminData(advancerCount: Int, teamIds: List[String])
-case class LiveScoreForDisplay(name: String,
-                               score: Double,
-                               gameSecondsRemaining: Int,
-                               playersYetToPlay: Int,
-                               playersCurrentlyPlaying: Int,
-                               projectedScore: Double,
-                               projectedToAdvance: Boolean)
+case class LiveResults(results: Seq[LiveResultRow],
+                       overviewStats: OverviewStats)
+case class LiveResultRow(name: String,
+                         score: Double,
+                         gameSecondsRemaining: Int,
+                         playersYetToPlay: Int,
+                         playersCurrentlyPlaying: Int,
+                         projectedScore: Double,
+                         projectedToAdvance: Boolean)
+case class OverviewStats(projectedCut: Double,
+                         lastIn: Seq[String],
+                         firstOut: Seq[String])

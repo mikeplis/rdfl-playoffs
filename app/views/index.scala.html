@@ -1,6 +1,37 @@
-@(liveScores: Seq[LiveScoreForDisplay], advancerCount: Int)
+@(liveResults: Seq[LiveResultRow], overviewStats: OverviewStats, advancerCount: Int)
 
 @main {
+
+<div class="row top-buffer well">
+    <div class="col-sm-4">
+        <ul class="list-unstyled">
+            <li>Number of Teams Advancing: @advancerCount</li>
+            <li>Projected Cut Line: @overviewStats.projectedCut</li>
+        </ul>
+    </div>
+    <div class="col-sm-4">
+        <ul class="list-unstyled">
+            <li>Projected Last In:
+                <ul>
+                    @for(team <- overviewStats.lastIn) {
+                        <li>@team</li>
+                    }
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <div class="col-sm-4">
+        <ul class="list-unstyled">
+            <li>Projected First Out:
+                <ul>
+                    @for(team <- overviewStats.firstOut) {
+                        <li>@team</li>
+                    }
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
 
 <table class="table">
   <thead>
@@ -15,7 +46,7 @@
     </tr>
   </thead>
   <tbody>  
-  @for((liveScore, idx) <- liveScores.sortBy(- _.score).zipWithIndex) {
+  @for((liveScore, idx) <- liveResults.sortBy(- _.score).zipWithIndex) {
     @if(idx < advancerCount) {
       <tr class="success">
     } else {
