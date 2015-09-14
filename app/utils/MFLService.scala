@@ -53,7 +53,9 @@ case class LiveScoreFranchise(id: String,
                               gameSecondsRemaining: Int,
                               playersYetToPlay: Int,
                               playersCurrentlyPlaying: Int,
-                              players: Seq[LiveScorePlayer])
+                              players: Seq[LiveScorePlayer]) {
+  val starters = players.filter(_.status == "starter")
+}
 object LiveScoreFranchise {
   implicit val reads: Reads[LiveScoreFranchise] = (
     (__ \ "id").read[String] and

@@ -10,6 +10,8 @@ import play.api.i18n.Messages.Implicits._
 
 import utils._
 
+import scala.collection.immutable.HashSet
+
 // TODO: unify "team" vs "franchise"
 // TODO: write tests
 // TODO: figure out if conf file should be used instead of environment variables
@@ -55,18 +57,43 @@ object Application extends Controller {
     )
   }
 
-  private def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
+  def formatLiveScoresForDisplay(liveScoring: LiveScoring): Seq[LiveScoreForDisplay] = {
     val teamIds = RedisService.getTeamIds
     val idToNameMap = MFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
-    liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id)).map { liveScore =>
+    val activeFranchises = liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id))
+
+    val franchiseToProjectedScore = projectedToAdvance(activeFranchises)
+    val franchisesProjectedToAdvance = {
+      val orderedByProjection = franchiseToProjectedScore.toSeq.sortBy(- _._2)
+      HashSet(orderedByProjection.take(RedisService.getAdvancerCount).map(_._1): _*)
+    }
+
+    activeFranchises.map { liveScore =>
       LiveScoreForDisplay(
         name = idToNameMap.getOrElse(liveScore.id, ""),
         score = liveScore.score,
         gameSecondsRemaining = liveScore.gameSecondsRemaining,
         playersYetToPlay = liveScore.playersYetToPlay,
-        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying)
+        playersCurrentlyPlaying = liveScore.playersCurrentlyPlaying,
+        projectedScore = franchiseToProjectedScore(liveScore.id),
+        projectedToAdvance = franchisesProjectedToAdvance.contains(liveScore.id))
     }
+  }
+
+  def projectedToAdvance(franchises: Seq[LiveScoreFranchise]) = {
+    val totalSecondsInGame = 3600
+    val projectedScores = MFLService.projectedScores.scores.map(ps => ps.id -> ps.score).toMap
+    franchises.map { franchise =>
+      val liveFranchiseProjection = franchise.starters.foldLeft(0d){ case (sum, player) =>
+        val livePlayerProjection = {
+          val projectedScore = projectedScores.getOrElse(player.playerId, 0d)
+          player.score + (player.gameSecondsRemaining / totalSecondsInGame) * projectedScore
+        }
+        sum + livePlayerProjection
+      }
+      franchise.id -> liveFranchiseProjection
+    }.toMap
   }
 }
 
@@ -75,4 +102,6 @@ case class LiveScoreForDisplay(name: String,
                                score: Double,
                                gameSecondsRemaining: Int,
                                playersYetToPlay: Int,
-                               playersCurrentlyPlaying: Int)
+                               playersCurrentlyPlaying: Int,
+                               projectedScore: Double,
+                               projectedToAdvance: Boolean)

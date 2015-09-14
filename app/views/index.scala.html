@@ -10,6 +10,8 @@
       <th>Game Seconds Remaining</th>
       <th>Players Yet To Play</th>
       <th>Players Currently Playing</th>
+      <th>Projected Score</th>
+      <th>Projected To Advance</th>
     </tr>
   </thead>
   <tbody>  
@@ -24,6 +26,8 @@
       <td>@liveScore.gameSecondsRemaining</td>
       <td>@liveScore.playersYetToPlay</td>
       <td>@liveScore.playersCurrentlyPlaying</td>
+      <td>@("%.2f".format(liveScore.projectedScore))</td>
+      <td>@liveScore.projectedToAdvance</td>
     </tr>
   }
   </tbody>
