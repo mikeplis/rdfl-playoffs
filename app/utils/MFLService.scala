@@ -6,6 +6,8 @@ import play.api.libs.functional.syntax._
 
 import scala.io.Source
 
+import com.github.nscala_time.time.Imports._
+
 object MFLService {
 
   def franchises: Option[List[Franchise]] = {
@@ -24,7 +26,8 @@ object MFLService {
   }
 
   def projectedScores = {
-    val url = "http://football26.myfantasyleague.com/2015/export?TYPE=projectedScores&L=34348&W=&JSON=1"
+    val nflWeek = getNFLWeek
+    val url = s"http://football26.myfantasyleague.com/2015/export?TYPE=projectedScores&L=34348&W=$nflWeek&JSON=1"
     val json = Json.parse(Source.fromURL(url).mkString)
     json.as[ProjectedScores]
   }
@@ -33,6 +36,21 @@ object MFLService {
     val liveScoringUrl = "http://football26.myfantasyleague.com/2015/export?TYPE=liveScoring&L=34348&DETAILS=1&JSON=1"
     val json = Json.parse(Source.fromURL(liveScoringUrl).mkString)
     json.as[LiveScoring]
+  }
+
+  def getNFLWeek = {
+    // Tuesday before the first week of NFL games
+    val week1 = DateTime.parse("2015-09-08")
+
+    // sequence where the (index + 1) of each element corresponds the NFL week that begins on the date stored at that index
+    // e.g. DateTime("2015-09-22") is stored at index 2, and represents the first day of the 3rd NFL week
+    val startOfNFLWeeks = {
+      val numNFLWeeks = 17
+      (0 until numNFLWeeks).map(i => week1.plusWeeks(i))
+    }
+
+    // the index of the first date in `startOfNFLWeeks` that is after today is equal to the current NFL week
+    startOfNFLWeeks.indexWhere(DateTime.now < _)
   }
 }
 
