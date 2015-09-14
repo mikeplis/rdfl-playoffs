@@ -77,4 +77,8 @@ object Application extends Controller {
 }
 
 case class AdminData(advancerCount: Int, teamIds: List[String])
-case class LiveScoreForDisplay(name: String, score: Double, gameSecondsRemaining: Int, playersYetToPlay: Int, playersCurrentlyPlaying: Int)
+case class LiveScoreForDisplay(name: String,
+                               score: Double,
+                               gameSecondsRemaining: Int,
+                               playersYetToPlay: Int,
+                               playersCurrentlyPlaying: Int)

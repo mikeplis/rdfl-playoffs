@@ -24,6 +24,12 @@ trait MFLService {
     })
   }
 
+  def projectedScores = {
+    val url = "http://football26.myfantasyleague.com/2015/export?TYPE=projectedScores&L=34348&W=&JSON=1"
+    val json = Json.parse(Source.fromURL(url).mkString)
+    json.as[ProjectedScores]
+  }
+
   def liveScores: LiveScoring
 }
 
@@ -103,4 +109,17 @@ case class LiveScoring(matchups: Seq[LiveScoreMatchup]) {
 }
 object LiveScoring {
   implicit val reads: Reads[LiveScoring] = (__ \ "liveScoring" \ "matchup").read[Seq[LiveScoreMatchup]].map(LiveScoring.apply)
+}
+
+case class ProjectedScore(id: String, score: Double)
+object ProjectedScore {
+  implicit val reads = (
+    (__ \ "id").read[String] and
+    (__ \ "score").read[String].map(s => if (s.isEmpty) 0 else s.toDouble)
+  )(ProjectedScore.apply _)
+}
+
+case class ProjectedScores(scores: Seq[ProjectedScore])
+object ProjectedScores {
+  implicit val reads: Reads[ProjectedScores] = (__ \ "projectedScores" \ "playerScore").read[Seq[ProjectedScore]].map(ProjectedScores.apply)
 }
