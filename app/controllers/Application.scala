@@ -17,6 +17,7 @@ import scala.collection.immutable.HashSet
 // TODO: figure out if conf file should be used instead of environment variables
 // TODO: fix all of the unsafe calls like toDouble and sys.env()
 
+
 object Application extends Controller {
 
   val adminForm = Form(
