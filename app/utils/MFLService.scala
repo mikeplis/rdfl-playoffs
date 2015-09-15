@@ -39,11 +39,11 @@ object MFLService {
   }
 
   def getNFLWeek = {
-    // Tuesday before the first week of NFL games
-    val week1 = DateTime.parse("2015-09-08")
+    // Wednesday before the first week of NFL games
+    val week1 = DateTime.parse("2015-09-09")
 
     // sequence where the (index + 1) of each element corresponds the NFL week that begins on the date stored at that index
-    // e.g. DateTime("2015-09-22") is stored at index 2, and represents the first day of the 3rd NFL week
+    // e.g. DateTime("2015-09-23") is stored at index 2, and represents the first day of the 3rd NFL week
     val startOfNFLWeeks = {
       val numNFLWeeks = 17
       (0 until numNFLWeeks).map(i => week1.plusWeeks(i))
