@@ -3,9 +3,12 @@ package utils
 import java.net.URI
 import com.redis._
 
-object RedisService {
+class RedisService {
 
-  private val connection = {
+  // was running into a periodic error similar to what's mentioned here: https://github.com/debasishg/scala-redis/issues/109
+  // so I switched RedisService to a class from an object and connection to a private def from a private val
+
+  private def connection = {
     val uri = new URI(sys.env("REDIS_URL"))
     val secret = uri.getUserInfo.split(":",2).lastOption
     new RedisClient(uri.getHost, uri.getPort, secret = secret)

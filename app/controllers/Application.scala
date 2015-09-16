@@ -19,6 +19,8 @@ import scala.collection.immutable.HashSet
 
 object Application extends Controller {
 
+  val redis = new RedisService
+
   val adminForm = Form(
     mapping(
       "advancers" -> number(min = 0, max = 100),
@@ -28,7 +30,7 @@ object Application extends Controller {
 
   def index = Action {
     val (liveResults, overviewStats) = getLiveResults(MFLService.liveScores)
-    val advancerCount = RedisService.getAdvancerCount
+    val advancerCount = redis.getAdvancerCount
     Ok(views.html.index(liveResults, overviewStats, advancerCount))
   }
 
@@ -36,8 +38,8 @@ object Application extends Controller {
     MFLService.franchises.fold(InternalServerError("error getting list of franchises")) { franchises =>
       val filledForm = adminForm.fill(
         AdminData(
-          advancerCount = RedisService.getAdvancerCount,
-          teamIds = RedisService.getTeamIds
+          advancerCount = redis.getAdvancerCount,
+          teamIds = redis.getTeamIds
       ))
       Ok(views.html.admin(filledForm, franchises))
     }
@@ -50,15 +52,15 @@ object Application extends Controller {
         BadRequest(views.html.admin(formWithErrors, franchiseList))
       },
       adminData => {
-        RedisService.setAdvancerCount(adminData.advancerCount)
-        RedisService.setTeamIds(adminData.teamIds)
+        redis.setAdvancerCount(adminData.advancerCount)
+        redis.setTeamIds(adminData.teamIds)
         Redirect(routes.Application.index())
       }
     )
   }
 
   def getLiveResults(liveScoring: LiveScoring) = {
-    val teamIds = RedisService.getTeamIds
+    val teamIds = redis.getTeamIds
     val idToNameMap = MFLService.franchises.fold(Map.empty[String, String])(_.map(f => f.id -> f.name).toMap)
 
     val activeFranchises = liveScoring.franchises.filter(franchise => teamIds.contains(franchise.id))
@@ -69,13 +71,13 @@ object Application extends Controller {
       // sort franchises by their live projected scores
       val orderedByProjection = franchiseToProjectedScore.toSeq.sortBy(- _._2)
       // create a Set of the top N franchises by projected score, where N in the number of advancers set by the admin
-      val projectedToAdvance = orderedByProjection.take(RedisService.getAdvancerCount).map(_._1)
+      val projectedToAdvance = orderedByProjection.take(redis.getAdvancerCount).map(_._1)
       HashSet(projectedToAdvance: _*)
     }
 
     val overviewStats = {
       val sizeOfLastInFirstOut = 4
-      val (in, out) = franchiseToProjectedScore.toSeq.sortBy(- _._2).splitAt(RedisService.getAdvancerCount)
+      val (in, out) = franchiseToProjectedScore.toSeq.sortBy(- _._2).splitAt(redis.getAdvancerCount)
       val projectedCut = in.lastOption.fold(0d)(_._2)
       val lastIn = in.takeRight(sizeOfLastInFirstOut)
       val firstOut = out.take(sizeOfLastInFirstOut)
