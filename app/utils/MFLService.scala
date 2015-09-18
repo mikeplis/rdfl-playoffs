@@ -56,7 +56,7 @@ object MFLService {
 
 case class Franchise(name: String, id: String)
 
-case class LiveScorePlayer(playerId: String, score: Double, gameSecondsRemaining: Int, status: String)
+case class LiveScorePlayer(id: String, score: Double, gameSecondsRemaining: Int, status: String)
 object LiveScorePlayer {
   implicit val reads: Reads[LiveScorePlayer] = (
     (__ \ "id").read[String] and

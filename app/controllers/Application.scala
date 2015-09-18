@@ -78,9 +78,6 @@ object Application extends Controller {
     val overviewStats = {
       val sizeOfLastInFirstOut = 4
       val (in, out) = franchiseToProjectedScore.toSeq.sortBy(- _._2).splitAt(redis.getAdvancerCount)
-      val projectedCut = in.lastOption.fold(0d)(_._2)
-      val lastIn = in.takeRight(sizeOfLastInFirstOut)
-      val firstOut = out.take(sizeOfLastInFirstOut)
       OverviewStats(
         projectedCut = in.lastOption.fold(0d)(_._2),
         lastIn = in.takeRight(sizeOfLastInFirstOut).map(x => idToNameMap.getOrElse(x._1, "")),
@@ -107,7 +104,8 @@ object Application extends Controller {
    */
   def liveProjections(franchises: Seq[LiveScoreFranchise]): Map[String, Double] = {
     // a football game is 60 minutes in length
-    val totalSecondsInGame = 3600
+    // type is Double so that integer division is not used when calculating live player projections
+    val totalSecondsInGame = 3600d
     // retrieve pre-game projected scores for all players
     val pregameProjections = MFLService.projectedScores.scores.map(ps => ps.id -> ps.score).toMap
     franchises.map { franchise =>
@@ -116,7 +114,7 @@ object Application extends Controller {
         // calculate live projected score for each player
         val livePlayerProjection = {
           // retrieve pre-game projected score for player
-          val pregameProjection = pregameProjections.getOrElse(player.playerId, 0d)
+          val pregameProjection = pregameProjections.getOrElse(player.id, 0d)
           // add player's current score to his pre-game projected score, with the pre-game projected score weighted by the
           // number of seconds remaining in the game, i.e. as the game moves on, a player's live projected score will converge
           // toward his current score
