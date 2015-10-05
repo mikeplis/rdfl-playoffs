@@ -11,23 +11,30 @@ class RedisService {
   private lazy val connection = {
     val uri = new URI(sys.env("REDIS_URL"))
     val secret = uri.getUserInfo.split(":",2).lastOption
-    new RedisClient(uri.getHost, uri.getPort, secret = secret)
+//    new RedisClient(uri.getHost, uri.getPort, secret = secret)
+    new RedisClientPool(uri.getHost, uri.getPort, secret = secret)
   }
 
   private val TeamIdsKey = "teamIds"
   private val AdvancerCountKey = "advancerCount"
 
   // TODO: toInt is unsafe
-  def getAdvancerCount = connection.get(AdvancerCountKey).map(_.toInt).getOrElse(0)
-  def setAdvancerCount(advancerCount: Int) = connection.set(AdvancerCountKey, advancerCount)
+  def getAdvancerCount = connection.withClient{ conn =>
+    conn.get(AdvancerCountKey).map(_.toInt).getOrElse(0)
+  }
+  def setAdvancerCount(advancerCount: Int) = connection.withClient{ conn =>
+    conn.set(AdvancerCountKey, advancerCount)
+  }
 
-  def getTeamIds = connection.lrange(TeamIdsKey, 0, -1).fold(List.empty[String])(_.flatten)
-  def setTeamIds(teamIds: Seq[String]) = {
+  def getTeamIds = connection.withClient { conn =>
+    conn.lrange(TeamIdsKey, 0, -1).fold(List.empty[String])(_.flatten)
+  }
+  def setTeamIds(teamIds: Seq[String]) = connection.withClient { conn =>
     // clear teamIds
-    connection.ltrim(TeamIdsKey, 1, 0)
+    conn.ltrim(TeamIdsKey, 1, 0)
     // add new ids to teamIds
     teamIds.foreach { teamId =>
-      connection.lpush(TeamIdsKey, teamId)
+      conn.lpush(TeamIdsKey, teamId)
     }
   }
 }
