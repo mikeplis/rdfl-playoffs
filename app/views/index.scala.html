@@ -41,7 +41,7 @@
       <th>Game Seconds Remaining</th>
       <th>Players Yet To Play</th>
       <th>Players Currently Playing</th>
-      <th>Projected Score</th>
+      <th>Projected Score <a data-toggle="tooltip" title="Based on MFL Projections - take with Gronk-sized grain of salt"><span class="glyphicon glyphicon-question-sign"></span></a></th>
       <th>Projected To Advance</th>
     </tr>
   </thead>
@@ -68,5 +68,10 @@
   }
   </tbody>
 </table>
+<script>
+    $(document).ready(function () {
+      $('[data-toggle="tooltip"]').tooltip();
+    })
+</script>
 
 }

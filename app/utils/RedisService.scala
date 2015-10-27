@@ -18,11 +18,10 @@ class RedisService {
   private val TeamIdsKey = "teamIds"
   private val AdvancerCountKey = "advancerCount"
 
-  // TODO: toInt is unsafe
-  def getAdvancerCount = connection.withClient{ conn =>
+  def getAdvancerCount = connection.withClient { conn =>
     conn.get(AdvancerCountKey).map(_.toInt).getOrElse(0)
   }
-  def setAdvancerCount(advancerCount: Int) = connection.withClient{ conn =>
+  def setAdvancerCount(advancerCount: Int) = connection.withClient { conn =>
     conn.set(AdvancerCountKey, advancerCount)
   }
 
