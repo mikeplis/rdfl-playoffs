@@ -33,41 +33,44 @@
     </div>
 </div>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Team Name</th>
-      <th>Score</th>
-      <th>Game Seconds Remaining</th>
-      <th>Players Yet To Play</th>
-      <th>Players Currently Playing</th>
-      <th>Projected Score <a data-toggle="tooltip" title="Based on MFL Projections - take with Gronk-sized grain of salt"><span class="glyphicon glyphicon-question-sign"></span></a></th>
-      <th>Projected To Advance</th>
-    </tr>
-  </thead>
-  <tbody>  
-  @for((liveScore, idx) <- liveResults.sortBy(- _.score).zipWithIndex) {
-    @if(idx < advancerCount) {
-      <tr class="success">
-    } else {
-      <tr class="danger">
-    }
-      <td>@liveScore.name</td>
-      <td>@("%.2f".format(liveScore.score))</td>
-      <td>@liveScore.gameSecondsRemaining</td>
-      <td>@liveScore.playersYetToPlay</td>
-      <td>@liveScore.playersCurrentlyPlaying</td>
-      <td>@("%.2f".format(liveScore.projectedScore))</td>
-    @if(liveScore.projectedToAdvance) {
-      <td>Yes</td>
-    } else {
-      <td>No</td>
-    }
+<div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Team Name</th>
+          <th>Score</th>
+          <th>Game Seconds Remaining</th>
+          <th>Players Yet To Play</th>
+          <th>Players Currently Playing</th>
+          <th>Projected Score <a data-toggle="tooltip" title="Based on MFL Projections - take with Gronk-sized grain of salt"><span class="glyphicon glyphicon-question-sign"></span></a></th>
+          <th>Projected To Advance</th>
+        </tr>
+      </thead>
+      <tbody>
+      @for((liveScore, idx) <- liveResults.sortBy(- _.score).zipWithIndex) {
+        @if(idx < advancerCount) {
+          <tr class="success">
+        } else {
+          <tr class="danger">
+        }
+          <td>@liveScore.name</td>
+          <td>@("%.2f".format(liveScore.score))</td>
+          <td>@liveScore.gameSecondsRemaining</td>
+          <td>@liveScore.playersYetToPlay</td>
+          <td>@liveScore.playersCurrentlyPlaying</td>
+          <td>@("%.2f".format(liveScore.projectedScore))</td>
+        @if(liveScore.projectedToAdvance) {
+          <td>Yes</td>
+        } else {
+          <td>No</td>
+        }
 
-    </tr>
-  }
-  </tbody>
-</table>
+        </tr>
+      }
+      </tbody>
+    </table>
+</div>
+
 <script>
     $(document).ready(function () {
       $('[data-toggle="tooltip"]').tooltip();
